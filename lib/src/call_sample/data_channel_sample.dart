@@ -91,15 +91,18 @@ class _DataChannelSampleState extends State<DataChannelSample> {
 
   void _connect(BuildContext context) async {
     _signaling ??= Signaling(widget.host, context)..connect();
-
+   
     _signaling?.onDataChannelMessage = (_, dc, RTCDataChannelMessage data) {
+      debugPrint("recieve"+dc.id.toString());
       setState(() {
         if (data.isBinary) {
           print('Got binary [' + data.binary.toString() + ']');
         } else {
           _text = data.text;
+          debugPrint("got msg $_text");
         }
       });
+
     };
 
     _signaling?.onDataChannel = (_, channel) {
@@ -121,7 +124,7 @@ class _DataChannelSampleState extends State<DataChannelSample> {
           setState(() {
             _session = session;
           });
-          _timer = Timer.periodic(Duration(seconds: 1), _handleDataChannelTest);
+
           break;
         case CallState.CallStateBye:
           if (_waitAccept) {
@@ -150,6 +153,7 @@ class _DataChannelSampleState extends State<DataChannelSample> {
           setState(() {
             _inCalling = true;
           });
+          
           break;
         case CallState.CallStateRinging:
           bool? accept = await _showAcceptDialog();
@@ -157,6 +161,7 @@ class _DataChannelSampleState extends State<DataChannelSample> {
             _accept();
             setState(() {
               _inCalling = true;
+              _timer = Timer.periodic(Duration(seconds: 1), _handleDataChannelTest);
             });
           } else {
             _reject();
@@ -179,6 +184,7 @@ class _DataChannelSampleState extends State<DataChannelSample> {
         'Say hello ' + timer.tick.toString() + ' times, from [$_selfId]';
     _dataChannel
         ?.send(RTCDataChannelMessage.fromBinary(Uint8List(timer.tick + 1)));
+    debugPrint("sending"+_dataChannel!.id.toString());
     _dataChannel?.send(RTCDataChannelMessage(text));
   }
 
@@ -249,6 +255,7 @@ class _DataChannelSampleState extends State<DataChannelSample> {
           : ListView.builder(
               shrinkWrap: true,
               padding: const EdgeInsets.all(0.0),
+              // ignore: unnecessary_null_comparison
               itemCount: (_peers != null ? _peers.length : 0),
               itemBuilder: (context, i) {
                 return _buildRow(context, _peers[i]);

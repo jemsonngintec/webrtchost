@@ -3,7 +3,7 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'src/call_sample/call_sample.dart';
+
 import 'src/call_sample/data_channel_sample.dart';
 import 'src/route_item.dart';
 
@@ -80,9 +80,8 @@ class _MyAppState extends State<MyApp> {
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (BuildContext context) => _datachannel
-                      ? DataChannelSample(host: _server)
-                      : CallSample(host: _server)));
+                  builder: (BuildContext context) => DataChannelSample(host: _server)
+                      ));
         }
       }
     });
