@@ -2,12 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-
-import '../utils/screen_select_dialog.dart';
 import 'random_string.dart';
-
-import '../utils/device_info.dart'
-    if (dart.library.js) '../utils/device_info_web.dart';
 import '../utils/websocket.dart'
     if (dart.library.js) '../utils/websocket_web.dart';
 import '../utils/turn.dart' if (dart.library.js) '../utils/turn_web.dart';
@@ -26,10 +21,7 @@ enum CallState {
   CallStateBye,
 }
 
-enum VideoSource {
-  Camera,
-  Screen,
-}
+
 
 class Session {
   Session({required this.sid, required this.pid});
@@ -43,8 +35,7 @@ class Session {
 class Signaling {
   Signaling(this._host, this._context);
 
-  JsonEncoder _encoder = JsonEncoder();
-  
+  JsonEncoder _encoder = JsonEncoder(); 
   String _selfId = randomNumeric(6);
   SimpleWebSocket? _socket;
   // ignore: unused_field
@@ -56,7 +47,7 @@ class Signaling {
   MediaStream? _localStream;
   List<MediaStream> _remoteStreams = <MediaStream>[];
   List<RTCRtpSender> _senders = <RTCRtpSender>[];
-  VideoSource _videoSource = VideoSource.Camera;
+
 
   Function(SignalingState state)? onSignalingStateChange;
   Function(Session session, CallState state)? onCallStateChange;
@@ -84,48 +75,10 @@ class Signaling {
     ]
   };
 
-  final Map<String, dynamic> _dcConstraints = {
-    'mandatory': {
-      'OfferToReceiveAudio': false,
-      'OfferToReceiveVideo': false,
-    },
-    'optional': [],
-  };
-
   close() async {
     await _cleanSessions();
     _socket?.close();
   }
-
-  void switchCamera() {
-    if (_localStream != null) {
-      if (_videoSource != VideoSource.Camera) {
-        _senders.forEach((sender) {
-          if (sender.track!.kind == 'video') {
-            sender.replaceTrack(_localStream!.getVideoTracks()[0]);
-          }
-        });
-        _videoSource = VideoSource.Camera;
-        onLocalStream?.call(_localStream!);
-      } else {
-        Helper.switchCamera(_localStream!.getVideoTracks()[0]);
-      }
-    }
-  }
-
-  void switchToScreenSharing(MediaStream stream) {
-    if (_localStream != null && _videoSource != VideoSource.Screen) {
-      _senders.forEach((sender) {
-        if (sender.track!.kind == 'video') {
-          sender.replaceTrack(stream.getVideoTracks()[0]);
-        }
-      });
-      onLocalStream?.call(stream);
-      _videoSource = VideoSource.Screen;
-    }
-  }
-
-
 
   void invite(String peerId, String media, bool useScreen) async {
     var sessionId = _selfId + '-' + peerId;
@@ -448,7 +401,7 @@ class Signaling {
   Future<void> _createOffer(Session session, String media) async {
     try {
       RTCSessionDescription s =
-          await session.pc!.createOffer(media == 'data' ? _dcConstraints : {});
+          await session.pc!.createOffer();
       await session.pc!.setLocalDescription(_fixSdp(s));
       _send('offer', _selfId, {
         'to': session.pid,
@@ -473,7 +426,7 @@ class Signaling {
   Future<void> _createAnswer(Session session, String media) async {
     try {
       RTCSessionDescription s =
-          await session.pc!.createAnswer(media == 'data' ? _dcConstraints : {});
+          await session.pc!.createAnswer();
       await session.pc!.setLocalDescription(_fixSdp(s));
       _send('answer', _selfId, {
         'to': session.pid,
@@ -536,6 +489,6 @@ class Signaling {
     await session.pc?.close();
     await session.dc?.close();
     _senders.clear();
-    _videoSource = VideoSource.Camera;
+    
   }
 }
